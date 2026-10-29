@@ -1,0 +1,112 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: web
+  description: The waitlist — a one-page signup that saves each visitor to a Notion database and sends a React Email welcome through Resend, rate-limited per visitor (Next.js on Cloudflare Workers + Static Assets via @opennextjs/cloudflare, per environment)
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: production
+  owner: platform
+  # Its pages, attached to it in the workspace's catalog: what the Docs
+  # library shows for it, and what the catalog's docs and runbook checks read.
+  # Generated from what this manifest and its sources declare.
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture, title: Architecture }
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  # `app`, not `web`: a domain and a component share one name space in the
+  # catalog, and a domain called `web` hid this component from it.
+  domain: app
+  path: apps/web
+  # Its own lane per environment: the Next.js build is the longest job in the
+  # plan, and a shared lane would wait on it.
+  lane: isolated
+  # No dependsOn: the site reads no wiring and provisions nothing — its one
+  # binding, the SIGNUP_LIMITER rate limit, is declared in wrangler.jsonc and
+  # deployed with the Worker — so there is no infra component before it.
+  #
+  # Notion's and Resend's keys, stored per environment as the product's
+  # secrets (README → Connect Notion and Resend): the Notion integration's
+  # secret and the database it writes signups to, the Resend API key and the
+  # address it sends from. The Worker reads them at request time, so the
+  # build hands them to the Worker as Worker secrets and no bundle contains
+  # them (buildCommand below). BEST-EFFORT references, wire-now-seed-later: a
+  # key nobody has stored yet is skipped when the job resolves its secrets (no
+  # env var, no failure), and a Worker without them serves the page and tells
+  # a signup the waitlist is not connected yet (503) — so a fresh product
+  # deploys and serves before its owner has a Notion database or a Resend
+  # domain at all.
+  optionalSecretEnv:
+    NOTION_SECRET: "secret://notion-waitlist/notion-waitlist/{{ .environment }}/NOTION_SECRET"
+    NOTION_DB: "secret://notion-waitlist/notion-waitlist/{{ .environment }}/NOTION_DB"
+    RESEND_API_KEY: "secret://notion-waitlist/notion-waitlist/{{ .environment }}/RESEND_API_KEY"
+    RESEND_FROM: "secret://notion-waitlist/notion-waitlist/{{ .environment }}/RESEND_FROM"
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@app/web"
+    wranglerConfig: wrangler.jsonc
+
+    # @opennextjs/cloudflare emits a Worker entrypoint plus a static-assets
+    # directory bound via ASSETS — both deploy in one `wrangler deploy`.
+    workerEntrypoint: .open-next/worker.js
+    assetsDir: .open-next/assets
+
+    # Per-env worker name: notion-waitlist-web-{dev,stage,prod}.
+    workerName: notion-waitlist-web
+    environmentAwareWorkerName: true
+
+    # The account's workers.dev subdomain; exported to the smoke step as
+    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}.
+    workersDevSubdomain: your-workers-subdomain
+
+    installCommand: pnpm install --frozen-lockfile
+    # The site's public origin (the Open Graph image's absolute URL, the
+    # welcome email's logo): the environment's SITE_URL when intent.yaml sets
+    # one (a custom domain), else its workers.dev URL. The subdomain is written
+    # out rather than read from ${WORKERS_DEV_SUBDOMAIN}: the composition
+    # exports that to the smoke step only, so the build would see it empty.
+    # ${ORUN_ENVIRONMENT} the runner sets for every step.
+    #
+    # Notion's and Resend's keys never reach the build: `next build` runs
+    # without them (`env -u`), so neither a bundle nor the bundler's cache
+    # holds one. Then the keys the environment has go to the Worker as
+    # SECRETS (tooling/wire/worker-secrets.mjs: `wrangler secret bulk`, the
+    # values over stdin) before the composition deploys it. Only the deploy
+    # lane holds a Cloudflare credential, so a verify lane builds the same and
+    # pushes nothing.
+    buildCommand: NEXT_PUBLIC_SITE_URL="${SITE_URL:-https://notion-waitlist-web-${ORUN_ENVIRONMENT}.your-workers-subdomain.workers.dev}" env -u NOTION_SECRET -u NOTION_DB -u RESEND_API_KEY -u RESEND_FROM pnpm exec turbo run build --filter=@app/web && node ../../tooling/wire/worker-secrets.mjs --secret NOTION_SECRET --secret NOTION_DB --secret RESEND_API_KEY --secret RESEND_FROM --worker "notion-waitlist-web-${ORUN_ENVIRONMENT}" --config wrangler.jsonc
+
+    # Smoke: the waitlist page renders to its end (`</html>` — a render that
+    # throws partway through a streamed page still sent a 200) with its signup
+    # button, and /api/health answers ok — the Worker has its SIGNUP_LIMITER
+    # rate-limit binding (wrangler.jsonc), connected to Notion and Resend or
+    # not. Each response is buffered before grep so an early match cannot
+    # SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q '</html>' && echo \"${html}\" | grep -q 'Join Waitlist!' && health=$(curl -sf \"${DEPLOYED_URL}/api/health\") && echo \"${health}\" | grep -q '\"ok\":true'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: web
+    runtime: cloudflare

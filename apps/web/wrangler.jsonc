@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "notion-waitlist-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Workers Rate Limiting: the signup routes' per-visitor limit, two requests
+  // per sixty seconds for a key (lib/waitlist.ts). The namespace is the
+  // account's; the key carries the site's host, so two sites on one account
+  // never share a count. Deployed as written — the composition deploys this
+  // file (`wrangler deploy --config wrangler.jsonc`).
+  "ratelimits": [
+    {
+      "name": "SIGNUP_LIMITER",
+      "namespace_id": "3601",
+      "simple": { "limit": 2, "period": 60 }
+    }
+  ],
+  "observability": { "enabled": true }
+}

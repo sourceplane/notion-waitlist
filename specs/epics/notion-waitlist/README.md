@@ -9,7 +9,7 @@ somebody else's in one landing.**
 
 | | |
 |---|---|
-| Status | In progress — NW0 on main |
+| Status | In progress — NW1 on main: the site runs on Workers |
 | Upstream | [lakshaybhushan/nextjs-notion-waitlist-template](https://github.com/lakshaybhushan/nextjs-notion-waitlist-template), at `4798588` (2025-06-25) |
 | Reference | [portfolio-starter-kit](https://github.com/sourceplane/portfolio-starter-kit) — the same scaffolding, tests and bootstrap; [clerk-auth-starter](https://github.com/sourceplane/clerk-auth-starter) — a SaaS's keys as optional Orun secrets, handed to the Worker by the deploy, and a site that serves before they exist |
 | Key | `NW` |
