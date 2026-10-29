@@ -4,7 +4,7 @@
 |---|---|---|
 | NW0 — the spec | ✅ | the repository's first commit |
 | NW1 — the waitlist on Workers | ✅ | NW-2 |
-| NW2 — a baseline | planned | NW-3 |
+| NW2 — a baseline | ✅ | NW-3, tagged `baseline-v1` |
 
 ## Departures from the upstream template
 

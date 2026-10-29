@@ -9,7 +9,7 @@ metadata:
 spec:
   title: "Vercel's Next.js Waitlist with Notion CMS on Cloudflare Workers"
   summary: "The Next.js waitlist with Notion as CMS — an animated one-page signup that saves each visitor to a Notion database and sends a React Email welcome through Resend, rate-limited per visitor — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, with Cloudflare's own rate-limit binding for Upstash, Notion's and Resend's keys as Orun secrets and a site that serves before they exist, inside the Cirrus baseline's repository conventions, and becomes an Orun baseline that takes a new site from nothing to live on stage and prod in one landing."
-  state: started
+  state: completed
   milestones:
     - name: "NW0 — the spec"
       exitCriteria:
