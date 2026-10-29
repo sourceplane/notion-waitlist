@@ -1,0 +1,32 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (NW → NW-1, NW-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: notion-waitlist
+  key: NW
+spec:
+  title: "Vercel's Next.js Waitlist with Notion CMS on Cloudflare Workers"
+  summary: "The Next.js waitlist with Notion as CMS — an animated one-page signup that saves each visitor to a Notion database and sends a React Email welcome through Resend, rate-limited per visitor — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, with Cloudflare's own rate-limit binding for Upstash, Notion's and Resend's keys as Orun secrets and a site that serves before they exist, inside the Cirrus baseline's repository conventions, and becomes an Orun baseline that takes a new site from nothing to live on stage and prod in one landing."
+  state: started
+  milestones:
+    - name: "NW0 — the spec"
+      exitCriteria:
+        - "the repository is born with its intent, CI, tooling and spec index, and this doc set and the task contracts are on main"
+      tasks: [NW-1]
+    - name: "NW1 — the waitlist on Workers"
+      exitCriteria:
+        - "apps/web is the upstream template, built by OpenNext into one Worker with Static Assets"
+        - "a signup sends the template's welcome through Resend and writes the template's row to Notion; without their keys a signup is told the waitlist is not connected yet and nothing throws"
+        - "both signup routes take the Worker's own rate-limit binding, two a minute per visitor"
+        - "no key is in any bundle: the deploy hands them to the Worker as Worker secrets"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green, and the Worker fits Workers Free"
+        - "the README says how to run, test, preview and deploy it, how to connect Notion and Resend, and how every Vercel piece maps to Cloudflare"
+      tasks: [NW-2]
+    - name: "NW2 — a baseline"
+      exitCriteria:
+        - "blueprint.yaml (the console card) and repo-blueprint.yaml (the build) take a new site from nothing to live on stage and prod in one landing, then record it"
+        - "a site built from it carries the site only, renamed throughout to its own name, repository and Worker, with the template's credit intact"
+        - "Baseline CI is green: contract tests, generated component docs, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the end-to-end tier, not connected and connected to a stand-in of Notion and Resend"
+      tasks: [NW-3]

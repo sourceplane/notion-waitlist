@@ -1,0 +1,20 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: NW-2
+  title: "The waitlist on Workers"
+spec:
+  goal: The Next.js waitlist with Notion as CMS runs on Cloudflare Workers + Static Assets through OpenNext, rate-limits both signup routes with the Worker's own binding, serves before Notion and Resend are connected, keeps their keys out of every bundle, and has its tests and a README that says how it maps to Vercel
+  affects:
+    - apps/web
+    - tests/web
+    - tooling/wire
+    - pnpm-lock.yaml
+    - pnpm-workspace.yaml
+    - README.md
+    - .gitignore
+  doneWhen:
+    - pnpm typecheck, lint, test and build are green
+    - wrangler dev serves the page and both routes, without the keys and with them against a stand-in, and refuses a third request a minute
+    - the Worker is under Workers Free's 3 MiB gzipped
+  gates: []
